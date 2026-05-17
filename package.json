@@ -1,0 +1,32 @@
+{
+  "name": "philips-garden",
+  "version": "1.0.0",
+  "description": "Philip's Garden — a cosy life game",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:mac": "electron-builder --mac"
+  },
+  "devDependencies": {
+    "electron": "^28.3.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.philiprose.garden",
+    "productName": "Philip's Garden",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "assets/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.games",
+      "target": "dmg",
+      "icon": "assets/icon.icns"
+    }
+  }
+}

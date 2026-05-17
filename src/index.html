@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Philip's Garden</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ═══ LOADING ═══ -->
+  <div id="screen-loading" class="screen active">
+    <div class="loading-content">
+      <div class="loading-title">Philip's Garden</div>
+      <div class="loading-spin">🌱</div>
+      <div class="loading-sub">Tending to things…</div>
+    </div>
+  </div>
+
+  <!-- ═══ HOME ═══ -->
+  <div id="screen-home" class="screen">
+    <div class="scene-bg" id="home-bg"></div>
+    <div class="home-overlay">
+      <div class="greeting-card">
+        <div id="greeting-text" class="greeting-main"></div>
+        <div id="date-text" class="greeting-date"></div>
+        <div id="home-alerts" class="home-alerts"></div>
+      </div>
+      <div class="philip-wrap" id="philip-wrap">
+        <img id="philip-sprite" src="../assets/philip_wave.png" alt="Philip" class="philip-img">
+      </div>
+      <nav class="home-nav">
+        <button class="nav-btn" data-screen="garden">
+          <span class="nav-icon">🌿</span>
+          <span class="nav-label">The Garden</span>
+        </button>
+        <button class="nav-btn" data-screen="pond">
+          <span class="nav-icon">🐟</span>
+          <span class="nav-label">The Koi Pond</span>
+        </button>
+        <button class="nav-btn" data-screen="train">
+          <span class="nav-icon">🚂</span>
+          <span class="nav-label">The Train Room</span>
+        </button>
+        <button class="nav-btn" data-screen="kitchen">
+          <span class="nav-icon">🫙</span>
+          <span class="nav-label">The Kitchen</span>
+        </button>
+      </nav>
+      <div class="home-footer">
+        <span id="tokens-home">🔧 0 workshop tokens</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ GARDEN ═══ -->
+  <div id="screen-garden" class="screen">
+    <div class="scene-bg garden-bg"></div>
+    <div class="scene-overlay">
+      <header class="scene-header">
+        <button class="back-btn" data-screen="home">← Home</button>
+        <h2>The Garden</h2>
+        <div class="tool-bar">
+          <button class="tool-btn active" id="tool-plant" data-tool="plant" title="Plant seeds">🌱 Plant</button>
+          <button class="tool-btn" id="tool-water" data-tool="water" title="Water crops">💧 Water</button>
+          <button class="tool-btn" id="tool-harvest" data-tool="harvest" title="Harvest">🧺 Harvest</button>
+        </div>
+      </header>
+      <div class="garden-body">
+        <div class="garden-grid" id="garden-grid"></div>
+        <aside class="garden-aside">
+          <div class="panel">
+            <h3 class="panel-title">🧺 Harvest Basket</h3>
+            <div id="garden-inventory" class="inventory-list"></div>
+            <div id="basket-empty" class="empty-note">Nothing harvested yet today.</div>
+          </div>
+          <div class="panel">
+            <h3 class="panel-title">💡 Tip</h3>
+            <p id="garden-tip" class="tip-text">Choose a tool above, then click a plot.</p>
+          </div>
+        </aside>
+      </div>
+    </div>
+    <!-- Seed picker modal -->
+    <div id="seed-modal" class="modal-backdrop hidden">
+      <div class="modal">
+        <h3>Choose a seed to plant</h3>
+        <div id="seed-grid" class="seed-grid"></div>
+        <button class="btn-secondary" id="close-seed-modal">Cancel</button>
+      </div>
+    </div>
+    <!-- Harvest animation -->
+    <div id="harvest-pop" class="harvest-pop hidden"></div>
+  </div>
+
+  <!-- ═══ KOI POND ═══ -->
+  <div id="screen-pond" class="screen">
+    <div class="scene-bg pond-bg"></div>
+    <div class="scene-overlay">
+      <header class="scene-header">
+        <button class="back-btn" data-screen="home">← Home</button>
+        <h2>The Koi Pond</h2>
+      </header>
+      <div class="pond-body">
+        <div class="pond-water" id="pond-water">
+          <!-- Fish rendered by JS -->
+        </div>
+        <aside class="pond-aside">
+          <div class="panel">
+            <h3 class="panel-title">🐟 Philip's Fish</h3>
+            <div id="fish-list" class="fish-list"></div>
+          </div>
+          <div class="panel">
+            <button class="btn-primary big-btn" id="feed-btn">🐡 Feed the Fish</button>
+            <p id="feed-status" class="tip-text"></p>
+          </div>
+          <div class="panel">
+            <h3 class="panel-title">📅 Feeding Streak</h3>
+            <p id="streak-display" class="streak-text">0 days</p>
+          </div>
+        </aside>
+      </div>
+    </div>
+    <!-- Name fish modal -->
+    <div id="name-modal" class="modal-backdrop hidden">
+      <div class="modal">
+        <h3>Give this fish a name</h3>
+        <input type="text" id="fish-name-input" class="text-input" maxlength="24" placeholder="Enter a name…">
+        <div class="modal-buttons">
+          <button class="btn-primary" id="confirm-name-btn">Confirm</button>
+          <button class="btn-secondary" id="cancel-name-btn">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TRAIN ROOM ═══ -->
+  <div id="screen-train" class="screen">
+    <div class="scene-bg train-bg"></div>
+    <div class="scene-overlay">
+      <header class="scene-header">
+        <button class="back-btn" data-screen="home">← Home</button>
+        <h2>The Train Room</h2>
+        <span id="tokens-train" class="token-display">🔧 0</span>
+      </header>
+      <div class="train-body">
+        <div class="train-layout-area" id="train-layout-area">
+          <div class="train-track-wrap">
+            <div class="train-track">
+              <span id="train-loco" class="train-loco">🚂</span>
+            </div>
+          </div>
+          <div class="placed-pieces" id="placed-pieces"></div>
+        </div>
+        <aside class="train-aside">
+          <div class="panel">
+            <h3 class="panel-title">🔓 Your Collection</h3>
+            <div id="owned-pieces" class="pieces-grid"></div>
+          </div>
+          <div class="panel">
+            <h3 class="panel-title">🔧 Workshop Shop</h3>
+            <div id="shop-pieces" class="pieces-grid"></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ KITCHEN ═══ -->
+  <div id="screen-kitchen" class="screen">
+    <div class="scene-bg kitchen-bg"></div>
+    <div class="scene-overlay">
+      <header class="scene-header">
+        <button class="back-btn" data-screen="home">← Home</button>
+        <h2>The Kitchen</h2>
+      </header>
+      <div class="kitchen-body">
+        <div class="kitchen-recipes panel">
+          <h3 class="panel-title">📜 Recipes</h3>
+          <div id="recipe-list" class="recipe-list"></div>
+        </div>
+        <div class="kitchen-pantry panel">
+          <h3 class="panel-title">🫙 The Pantry</h3>
+          <div id="pantry-list" class="pantry-list"></div>
+          <div id="pantry-empty" class="empty-note">The pantry is bare — time to get cooking!</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TOAST NOTIFICATION ═══ -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
