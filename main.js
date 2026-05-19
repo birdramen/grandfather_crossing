@@ -18,6 +18,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
+      webSecurity: false, // allow loading local file:// images
     },
     titleBarStyle: 'hiddenInset',
     backgroundColor: '#1e3a1e',
