@@ -562,98 +562,85 @@ html, body {
 .train-body {
   display: flex;
   flex: 1;
-  gap: 16px;
-  padding: 16px;
+  gap: 0;
   overflow: hidden;
 }
 
-.train-layout-area {
+/* Main scene area: holds SVG track + scenery island */
+.train-scene {
   flex: 1;
   position: relative;
   overflow: hidden;
-  border-radius: var(--radius);
 }
 
-.train-track-wrap {
-  position: absolute;
-  bottom: 20px;
-  left: 0; right: 0;
-  padding: 0 20px;
-}
-.train-track {
-  height: 28px;
-  background: repeating-linear-gradient(90deg, #7a5c30 0, #7a5c30 20px, #5a3c18 20px, #5a3c18 30px);
-  border-top: 3px solid #4a3010;
-  border-bottom: 3px solid #4a3010;
-  border-radius: 4px;
-  position: relative;
-  overflow: hidden;
-}
-.train-loco {
-  position: absolute;
-  font-size: 2rem;
-  top: 50%;
-  transform: translateY(-50%);
-  animation: train-run 12s linear infinite;
-  white-space: nowrap;
-}
-@keyframes train-run {
-  0%   { left: -60px; }
-  100% { left: calc(100% + 10px); }
-}
-@keyframes train-run-slow {
-  0%   { left: -60px; }
-  100% { left: calc(100% + 10px); }
-}
-
-.track-layout-selector {
-  position: absolute;
-  top: 10px; left: 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  z-index: 10;
-  background: rgba(10,20,8,0.75);
-  border: 1px solid var(--clr-panel-b);
-  border-radius: var(--radius-sm);
-  padding: 6px 10px;
-}
-.track-layout-btn {
-  background: transparent;
-  border: 1px solid var(--clr-panel-b);
-  border-radius: 4px;
-  color: var(--clr-muted);
-  padding: 4px 10px;
-  cursor: pointer;
-  font-size: 0.75rem;
-  transition: all 0.15s;
-}
-.track-layout-btn:hover { border-color: var(--clr-green-lt); color: var(--clr-cream); }
-.track-layout-btn.active { background: var(--clr-green-dk); border-color: var(--clr-green-lt); color: var(--clr-cream); }
-
-.placed-pieces {
+/* The SVG oval track fills the scene */
+.track-svg {
   position: absolute;
   inset: 0;
-  pointer-events: none;
+  width: 100%;
+  height: 100%;
 }
-.placed-piece {
+
+/* Scenery island: the clickable/draggable zone inside the oval */
+.scenery-island {
   position: absolute;
-  font-size: 2.2rem;
-  cursor: grab;
+  border-radius: 50%;
+  /* gentle outline so Philip can see where to drop things */
+  border: 2px dashed rgba(160,220,100,0.25);
   pointer-events: all;
-  user-select: none;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
-  transition: transform 0.1s;
+  overflow: hidden;
 }
-.placed-piece:hover { transform: scale(1.15); }
-.placed-piece:active { cursor: grabbing; transform: scale(1.05); }
+.scenery-island:hover {
+  border-color: rgba(160,220,100,0.45);
+}
+
+/* Draggable scenery pieces inside the island */
+.island-piece {
+  position: absolute;
+  font-size: 1.8rem;
+  cursor: grab;
+  user-select: none;
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.7));
+  transition: transform 0.1s;
+  line-height: 1;
+}
+.island-piece:hover { transform: scale(1.2); }
+.island-piece:active { cursor: grabbing; }
+
+/* Train preview string in the sidebar */
+.train-preview {
+  font-size: 1.6rem;
+  letter-spacing: 2px;
+  text-align: center;
+  padding: 8px 4px;
+  background: rgba(0,0,0,0.25);
+  border-radius: var(--radius-sm);
+  min-height: 46px;
+  word-break: break-all;
+}
 
 .train-aside {
-  width: 220px;
+  width: 230px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   overflow-y: auto;
+  padding: 12px;
+}
+
+.scrollable-panel {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Shop section grouping */
+.shop-section { margin-bottom: 10px; }
+.shop-section-label {
+  color: var(--clr-muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 5px;
 }
 
 .pieces-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -675,53 +662,6 @@ html, body {
 .piece-card.shop-card.unaffordable { opacity: 0.45; cursor: not-allowed; }
 .piece-card.shop-card.unaffordable:hover { transform: none; }
 
-/* Track pieces rendered as CSS rail segments */
-.track-piece-placed {
-  position: absolute;
-  cursor: grab;
-  z-index: 6;
-}
-.track-piece-placed:active { cursor: grabbing; }
-.track-piece-placed:hover .track-delete-hint { opacity: 1; }
-
-.track-segment {
-  position: relative;
-  background: #7a5c30;
-  border-top: 3px solid #4a3010;
-  border-bottom: 3px solid #4a3010;
-}
-.track-segment.straight {
-  width: 80px; height: 20px;
-  background: repeating-linear-gradient(90deg, #7a5c30 0, #7a5c30 14px, #5a3c18 14px, #5a3c18 20px);
-}
-.track-segment.curve-br {
-  width: 60px; height: 60px;
-  background: none;
-  border: none;
-  border-right: 6px solid #7a5c30;
-  border-bottom: 6px solid #7a5c30;
-  border-radius: 0 0 60px 0;
-}
-.track-segment.curve-bl {
-  width: 60px; height: 60px;
-  background: none;
-  border: none;
-  border-left: 6px solid #7a5c30;
-  border-bottom: 6px solid #7a5c30;
-  border-radius: 0 0 0 60px;
-}
-
-.track-delete-hint {
-  position: absolute;
-  top: -18px; left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.6rem;
-  color: var(--clr-muted);
-  opacity: 0;
-  transition: opacity 0.2s;
-  white-space: nowrap;
-  pointer-events: none;
-}
 
 .token-display { color: var(--clr-gold); font-size: 1rem; margin-left: auto; }
 

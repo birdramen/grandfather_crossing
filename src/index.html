@@ -144,22 +144,25 @@
         <span id="tokens-train" class="token-display">🔧 0</span>
       </header>
       <div class="train-body">
-        <div class="train-layout-area" id="train-layout-area">
-          <div class="train-track-wrap">
-            <div class="train-track">
-              <span id="train-loco" class="train-loco">🚂</span>
-            </div>
+        <div class="train-scene" id="train-scene">
+          <!-- SVG oval track injected by JS -->
+          <div class="scenery-island" id="scenery-island">
+            <!-- Draggable scenery goes here -->
           </div>
-          <div class="placed-pieces" id="placed-pieces"></div>
         </div>
         <aside class="train-aside">
           <div class="panel">
-            <h3 class="panel-title">🔓 Your Collection</h3>
-            <div id="owned-pieces" class="pieces-grid"></div>
+            <h3 class="panel-title">🚂 Your Train</h3>
+            <div id="train-preview" class="train-preview"></div>
+            <p class="tip-text" style="margin-top:8px">Buy rolling stock to grow your train. Each piece joins the run!</p>
+          </div>
+          <div class="panel scrollable-panel">
+            <h3 class="panel-title">🔧 Workshop Shop</h3>
+            <div id="shop-pieces"></div>
           </div>
           <div class="panel">
-            <h3 class="panel-title">🔧 Workshop Shop</h3>
-            <div id="shop-pieces" class="pieces-grid"></div>
+            <h3 class="panel-title">🌿 Scenery Collection</h3>
+            <div id="owned-scenery" class="pieces-grid"></div>
           </div>
         </aside>
       </div>

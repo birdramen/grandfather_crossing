@@ -1,11 +1,8 @@
 import { state, save, TRAIN_PIECES } from './state.js';
 import { onEnter, toast } from './nav.js';
 
-const TRACK_LAYOUTS = [
-  { id: 'oval',    label: 'Oval',         animation: 'train-run-oval',    path: 'oval' },
-  { id: 'figure8', label: 'Figure-of-8',  animation: 'train-run-figure8', path: 'figure8' },
-  { id: 'branch',  label: 'Branch Line',  animation: 'train-run-branch',  path: 'branch' },
-];
+// Rolling stock order: how carriages line up behind the engine
+const STOCK_ORDER = ['steam_engine', 'coal_tender', 'dining_car', 'passenger_carriage', 'goods_wagon', 'brake_van'];
 
 export function initTrain() {
   onEnter('train', renderTrain);
@@ -13,235 +10,336 @@ export function initTrain() {
 
 function renderTrain() {
   renderTokenDisplay();
-  renderTrackSelector();
-  renderOwnedPieces();
+  buildSVGTrack();
+  renderTrainPreview();
   renderShop();
-  renderLayout();
+  renderOwnedScenery();
+  renderSceneryLayout();
 }
+
+// ─── Token display ────────────────────────────────────────────────────────────
 
 function renderTokenDisplay() {
   const t = state.data.tokens;
   document.getElementById('tokens-train').textContent = `🔧 ${t} token${t !== 1 ? 's' : ''}`;
 }
 
-// ─── Track layout selector ────────────────────────────────────────────────────
+// ─── SVG oval track ───────────────────────────────────────────────────────────
 
-function renderTrackSelector() {
-  const wrap = document.getElementById('train-layout-area');
-  let sel = wrap.querySelector('.track-layout-selector');
-  if (!sel) {
-    sel = document.createElement('div');
-    sel.className = 'track-layout-selector';
-    wrap.prepend(sel);
-  }
+function buildSVGTrack() {
+  const scene = document.getElementById('train-scene');
+  scene.querySelector('svg')?.remove();
 
-  const current = state.data.train.trackLayout ?? 'oval';
-  sel.innerHTML = `<span style="color:var(--clr-muted);font-size:0.75rem;margin-right:6px">Track layout:</span>` +
-    TRACK_LAYOUTS.map(l =>
-      `<button class="track-layout-btn${current === l.id ? ' active' : ''}" data-layout="${l.id}">${l.label}</button>`
-    ).join('');
+  const W = 780, H = 370;
+  const cx = W / 2, cy = Math.round(H * 0.58);
 
-  sel.querySelectorAll('.track-layout-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      state.data.train.trackLayout = btn.dataset.layout;
-      save();
-      applyTrackLayout(btn.dataset.layout);
-      renderTrackSelector();
-    });
-  });
-
-  applyTrackLayout(current);
-}
-
-function applyTrackLayout(layoutId) {
-  const loco = document.getElementById('train-loco');
-  const track = document.querySelector('.train-track');
-  if (!loco || !track) return;
-
-  loco.style.animation = 'none';
-  void loco.offsetWidth; // force reflow
-
-  switch (layoutId) {
-    case 'figure8':
-      track.style.borderRadius = '50px';
-      track.style.height = '36px';
-      loco.style.animation = 'train-run 8s linear infinite';
-      break;
-    case 'branch':
-      track.style.borderRadius = '4px';
-      track.style.height = '22px';
-      loco.style.animation = 'train-run-slow 18s linear infinite';
-      break;
-    default: // oval
-      track.style.borderRadius = '4px';
-      track.style.height = '28px';
-      loco.style.animation = 'train-run 12s linear infinite';
-  }
-}
-
-// ─── Owned pieces ─────────────────────────────────────────────────────────────
-
-function renderOwnedPieces() {
   const owned = state.data.train.ownedPieces;
-  const grid = document.getElementById('owned-pieces');
-  grid.innerHTML = '';
 
-  const ownedDefs = TRAIN_PIECES.filter(p => owned.includes(p.id));
-  if (ownedDefs.length === 0) {
-    grid.innerHTML = '<p style="color:var(--clr-muted);font-size:0.8rem">None yet.</p>';
-    return;
-  }
+  // Each straight piece adds 22px to the oval width (rx)
+  const straightCount = owned.filter(id => id === 'track_straight').length;
+  // Each curve piece adds 10px to the oval height (ry)
+  const curveCount = owned.filter(id => id === 'track_curve').length;
 
-  ownedDefs.forEach(piece => {
-    const card = document.createElement('div');
-    card.className = 'piece-card';
-    card.title = `Click to place ${piece.name}`;
-    card.innerHTML = `
-      <span class="piece-emoji">${piece.isTrack ? '🛤️' : piece.emoji}</span>
-      <span class="piece-name">${piece.name}</span>
-    `;
-    card.addEventListener('click', () => placePiece(piece));
-    grid.appendChild(card);
+  const baseRx = 250, baseRy = 88;
+  const rx = Math.min(baseRx + straightCount * 22, W / 2 - 35);
+  const ry = Math.min(baseRy + curveCount * 10, H * 0.44);
+
+  // Path: full clockwise ellipse (needed for animateMotion)
+  const pathD = ellipsePath(cx, cy, rx, ry);
+
+  // Speed: longer track = slower loop (more to travel)
+  const trackLen = 2 * Math.PI * Math.sqrt((rx * rx + ry * ry) / 2);
+  const dur = (trackLen / 120).toFixed(1); // ~120px/s
+
+  const trainStr = buildTrainString();
+
+  // Accessories dotted around the outside of the oval
+  const accessories = buildAccessorySVG(cx, cy, rx, ry, owned);
+
+  const svg = `
+<svg class="track-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <path id="oval-path" d="${pathD}"/>
+  </defs>
+
+  <!-- Soft ground fill inside oval -->
+  <ellipse cx="${cx}" cy="${cy}" rx="${rx - 16}" ry="${ry - 10}"
+           fill="rgba(35,65,20,0.22)"/>
+
+  <!-- Sleepers (dashed stroke around a slightly larger ellipse) -->
+  <ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}"
+           fill="none" stroke="#5c3e1a" stroke-width="22"
+           stroke-dasharray="14 7"/>
+
+  <!-- Outer rail -->
+  <ellipse cx="${cx}" cy="${cy}" rx="${rx + 7}" ry="${ry + 7}"
+           fill="none" stroke="#9a7840" stroke-width="3.5"/>
+  <!-- Inner rail -->
+  <ellipse cx="${cx}" cy="${cy}" rx="${rx - 7}" ry="${ry - 7}"
+           fill="none" stroke="#9a7840" stroke-width="3.5"/>
+
+  ${accessories}
+
+  <!-- Running train -->
+  <text font-size="22" dominant-baseline="central">
+    ${trainStr}
+    <animateMotion dur="${dur}s" repeatCount="indefinite">
+      <mpath href="#oval-path"/>
+    </animateMotion>
+  </text>
+</svg>`;
+
+  scene.insertAdjacentHTML('afterbegin', svg);
+
+  // Position the scenery island to cover the oval interior
+  positionSceneryIsland(cx, cy, rx, ry, W, H);
+}
+
+function ellipsePath(cx, cy, rx, ry) {
+  // Full clockwise ellipse starting from the left-most point
+  return `M ${cx - rx},${cy} A ${rx},${ry} 0 1 1 ${cx + rx},${cy} A ${rx},${ry} 0 1 1 ${cx - rx},${cy} Z`;
+}
+
+function buildTrainString() {
+  const owned = state.data.train.ownedPieces;
+  return STOCK_ORDER.map(id => {
+    const def = TRAIN_PIECES.find(p => p.id === id);
+    if (!def?.isRollingStock) return '';
+    const count = owned.filter(o => o === id).length;
+    return def.emoji.repeat(count);
+  }).join('') || '🚂';
+}
+
+function buildAccessorySVG(cx, cy, rx, ry, owned) {
+  const accessories = owned.filter(id => {
+    const p = TRAIN_PIECES.find(p => p.id === id);
+    return p?.isAccessory;
   });
+  if (!accessories.length) return '';
+
+  // Fixed positions around the outside of the oval (angle in degrees)
+  const slots = [0, 45, 90, 135, 180, 225, 270, 315];
+  const r = 1.22; // multiplier: place outside the oval
+
+  return accessories.slice(0, slots.length).map((id, i) => {
+    const def = TRAIN_PIECES.find(p => p.id === id);
+    if (!def) return '';
+    const rad = (slots[i] * Math.PI) / 180;
+    const x = Math.round(cx + Math.cos(rad) * rx * r);
+    const y = Math.round(cy + Math.sin(rad) * ry * r * 0.85);
+    return `<text x="${x}" y="${y}" font-size="18" text-anchor="middle" dominant-baseline="central">${def.emoji}</text>`;
+  }).join('\n  ');
+}
+
+// Position the scenery island div to cover the oval interior
+function positionSceneryIsland(cx, cy, rx, ry, W, H) {
+  const island = document.getElementById('scenery-island');
+  if (!island) return;
+  const pad = 18; // inset from rail
+  island.style.left   = `${((cx - rx + pad) / W * 100).toFixed(1)}%`;
+  island.style.top    = `${((cy - ry + pad) / H * 100).toFixed(1)}%`;
+  island.style.width  = `${((rx - pad) * 2 / W * 100).toFixed(1)}%`;
+  island.style.height = `${((ry - pad) * 2 / H * 100).toFixed(1)}%`;
+}
+
+// ─── Train preview (sidebar) ──────────────────────────────────────────────────
+
+function renderTrainPreview() {
+  const el = document.getElementById('train-preview');
+  el.textContent = buildTrainString();
 }
 
 // ─── Shop ─────────────────────────────────────────────────────────────────────
 
+const SHOP_SECTIONS = [
+  { label: '🚂 Rolling Stock', filter: p => p.isRollingStock },
+  { label: '🛤️ Track Extensions', filter: p => p.isTrack },
+  { label: '🚦 Track Accessories', filter: p => p.isAccessory },
+  { label: '🌿 Scenery',       filter: p => p.isScenery },
+];
+
 function renderShop() {
-  const owned = state.data.train.ownedPieces;
-  const tokens = state.data.tokens;
-  const grid = document.getElementById('shop-pieces');
-  grid.innerHTML = '';
+  const owned        = state.data.train.ownedPieces;
+  const unlockedSc   = state.data.train.unlockedScenery ?? [];
+  const tokens       = state.data.tokens;
+  const container    = document.getElementById('shop-pieces');
+  container.innerHTML = '';
 
-  const available = TRAIN_PIECES.filter(p => !owned.includes(p.id));
-  if (available.length === 0) {
-    grid.innerHTML = '<p style="color:var(--clr-muted);font-size:0.8rem">You have everything! Brilliant.</p>';
-    return;
-  }
+  SHOP_SECTIONS.forEach(({ label, filter }) => {
+    const pieces = TRAIN_PIECES.filter(filter);
 
-  // Group by category
-  const categories = [...new Set(available.map(p => p.category))];
-  categories.forEach(cat => {
-    const header = document.createElement('p');
-    header.style.cssText = 'color:var(--clr-muted);font-size:0.7rem;margin:6px 0 3px;grid-column:1/-1';
-    header.textContent = cat;
-    grid.appendChild(header);
+    // For scenery/accessories: filter out already-unlocked ones
+    const available = (filter === TRAIN_PIECES.find(p => p.isScenery) ? false : true)
+      ? pieces
+      : pieces.filter(p => !unlockedSc.includes(p.id));
 
-    available.filter(p => p.category === cat).forEach(piece => {
+    // Determine what to show
+    const shopPieces = pieces.filter(p => {
+      if (p.isRollingStock || p.isTrack) return true; // always available to buy more
+      return !unlockedSc.includes(p.id) && !p.starter; // scenery/accessory: hide once unlocked
+    });
+
+    if (shopPieces.length === 0) return;
+
+    const section = document.createElement('div');
+    section.className = 'shop-section';
+    section.innerHTML = `<p class="shop-section-label">${label}</p>`;
+
+    const grid = document.createElement('div');
+    grid.className = 'pieces-grid';
+
+    shopPieces.forEach(piece => {
       const canAfford = tokens >= piece.cost;
+      const count = (piece.isRollingStock || piece.isTrack)
+        ? owned.filter(id => id === piece.id).length
+        : 0;
+
       const card = document.createElement('div');
       card.className = `piece-card shop-card${canAfford ? '' : ' unaffordable'}`;
       card.innerHTML = `
-        <span class="piece-emoji">${piece.isTrack ? '🛤️' : piece.emoji}</span>
-        <span class="piece-name">${piece.name}</span>
+        <span class="piece-emoji">${piece.emoji}</span>
+        <span class="piece-name">${piece.name}${count > 0 ? ` ×${count}` : ''}</span>
         <span class="piece-cost">🔧 ${piece.cost}</span>
       `;
-      if (canAfford) {
-        card.addEventListener('click', () => buyPiece(piece));
-        card.title = `Buy ${piece.name} for ${piece.cost} tokens`;
-      } else {
-        card.title = `Need ${piece.cost - tokens} more tokens`;
-      }
+      card.title = canAfford
+        ? `Buy ${piece.name} for ${piece.cost} tokens`
+        : `Need ${piece.cost - tokens} more tokens`;
+      if (canAfford) card.addEventListener('click', () => buyPiece(piece));
       grid.appendChild(card);
     });
+
+    section.appendChild(grid);
+    container.appendChild(section);
   });
 }
 
 function buyPiece(piece) {
-  if (state.data.tokens < piece.cost) { toast("Not enough workshop tokens yet!"); return; }
+  if (state.data.tokens < piece.cost) { toast("Not enough workshop tokens!"); return; }
   state.data.tokens -= piece.cost;
-  state.data.train.ownedPieces.push(piece.id);
+
+  if (piece.isRollingStock || piece.isTrack) {
+    // Allow multiples
+    state.data.train.ownedPieces.push(piece.id);
+  } else {
+    // Scenery/accessory — unlock once
+    if (!state.data.train.unlockedScenery) state.data.train.unlockedScenery = [];
+    if (!state.data.train.unlockedScenery.includes(piece.id)) {
+      state.data.train.unlockedScenery.push(piece.id);
+    }
+  }
+
   save();
-  toast(`🔓 Unlocked ${piece.name}! It's now in your collection.`);
+
+  if (piece.isRollingStock) {
+    toast(`🚂 ${piece.name} joined the train!`);
+  } else if (piece.isTrack) {
+    toast(`🛤️ Track extended! The oval is now wider.`);
+  } else if (piece.isAccessory) {
+    toast(`🔓 ${piece.name} added to the track-side.`);
+  } else {
+    toast(`🔓 ${piece.name} added to your scenery — place it inside the oval!`);
+  }
+
   renderTrain();
 }
 
-// ─── Layout ───────────────────────────────────────────────────────────────────
+// ─── Owned scenery (sidebar) ──────────────────────────────────────────────────
 
-function renderLayout() {
-  const area = document.getElementById('placed-pieces');
-  area.innerHTML = '';
+function renderOwnedScenery() {
+  const unlockedSc = state.data.train.unlockedScenery ?? [];
+  const grid = document.getElementById('owned-scenery');
+  grid.innerHTML = '';
 
-  state.data.train.layout.forEach((placed, idx) => {
-    const def = TRAIN_PIECES.find(p => p.id === placed.pieceId);
-    if (!def) return;
-    const el = buildPlacedEl(def, placed, idx);
-    area.appendChild(el);
+  const sceneryPieces = TRAIN_PIECES.filter(p => p.isScenery && unlockedSc.includes(p.id));
+  if (sceneryPieces.length === 0) {
+    grid.innerHTML = '<p class="tip-text">Buy scenery from the shop to decorate the island!</p>';
+    return;
+  }
+
+  sceneryPieces.forEach(piece => {
+    const card = document.createElement('div');
+    card.className = 'piece-card';
+    card.title = `Click to place ${piece.name} inside the oval`;
+    card.innerHTML = `
+      <span class="piece-emoji">${piece.emoji}</span>
+      <span class="piece-name">${piece.name}</span>
+    `;
+    card.addEventListener('click', () => placeScenery(piece));
+    grid.appendChild(card);
   });
 }
 
-function buildPlacedEl(def, placed, idx) {
-  const el = document.createElement('div');
-  el.style.left = `${placed.x}%`;
-  el.style.top  = `${placed.y}%`;
+// ─── Scenery placement (inside the oval) ─────────────────────────────────────
 
-  if (def.isTrack) {
-    el.className = 'track-piece-placed';
-    const seg = document.createElement('div');
-    seg.className = `track-segment ${def.trackType ?? 'straight'}`;
-    el.appendChild(seg);
-    const hint = document.createElement('span');
-    hint.className = 'track-delete-hint';
-    hint.textContent = 'double-click to remove';
-    el.appendChild(hint);
-  } else {
-    el.className = 'placed-piece';
-    el.textContent = def.emoji;
-    el.title = def.name;
-  }
-
-  makeDraggable(el, idx);
-  return el;
-}
-
-function placePiece(piece) {
-  const x = 25 + Math.random() * 45;
-  const y = 15 + Math.random() * 45;
-  state.data.train.layout.push({ pieceId: piece.id, x, y });
+function placeScenery(piece) {
+  if (!state.data.train.sceneryLayout) state.data.train.sceneryLayout = [];
+  // Place near centre of island with slight random spread
+  const x = 35 + Math.random() * 30;
+  const y = 25 + Math.random() * 50;
+  state.data.train.sceneryLayout.push({ pieceId: piece.id, x, y });
   save();
-  toast(`Placed ${piece.name}. Drag it wherever looks best — double-click to remove.`);
-  renderLayout();
+  toast(`${piece.emoji} Placed in the oval. Drag it anywhere inside!`);
+  renderSceneryLayout();
 }
 
-function makeDraggable(el, idx) {
-  const area = document.getElementById('train-layout-area');
-  let startX, startY, startLeft, startTop, moved;
+function renderSceneryLayout() {
+  const island = document.getElementById('scenery-island');
+  if (!island) return;
+  // Clear only placed pieces (keep island structure)
+  island.querySelectorAll('.island-piece').forEach(el => el.remove());
+
+  const layout = state.data.train.sceneryLayout ?? [];
+  layout.forEach((placed, idx) => {
+    const def = TRAIN_PIECES.find(p => p.id === placed.pieceId);
+    if (!def) return;
+
+    const el = document.createElement('div');
+    el.className = 'island-piece';
+    el.textContent = def.emoji;
+    el.title = `${def.name} — double-click to remove`;
+    el.style.left = `${placed.x}%`;
+    el.style.top  = `${placed.y}%`;
+
+    makeDraggable(el, idx, island);
+    el.addEventListener('dblclick', () => {
+      state.data.train.sceneryLayout.splice(idx, 1);
+      save();
+      toast(`${def.emoji} Removed. It's back in your collection.`);
+      renderSceneryLayout();
+    });
+
+    island.appendChild(el);
+  });
+}
+
+function makeDraggable(el, idx, container) {
+  let startX, startY, startL, startT, moved;
 
   el.addEventListener('mousedown', e => {
     e.preventDefault();
     moved = false;
-    const rect = area.getBoundingClientRect();
-    startX = e.clientX;
-    startY = e.clientY;
-    startLeft = state.data.train.layout[idx].x;
-    startTop  = state.data.train.layout[idx].y;
+    const rect = container.getBoundingClientRect();
+    startX = e.clientX; startY = e.clientY;
+    startL = state.data.train.sceneryLayout[idx].x;
+    startT = state.data.train.sceneryLayout[idx].y;
 
     const onMove = ev => {
       moved = true;
-      const dx = ((ev.clientX - startX) / rect.width) * 100;
+      const dx = ((ev.clientX - startX) / rect.width)  * 100;
       const dy = ((ev.clientY - startY) / rect.height) * 100;
-      const newX = Math.max(0, Math.min(94, startLeft + dx));
-      const newY = Math.max(0, Math.min(88, startTop  + dy));
-      el.style.left = `${newX}%`;
-      el.style.top  = `${newY}%`;
-      state.data.train.layout[idx].x = newX;
-      state.data.train.layout[idx].y = newY;
+      const nx = Math.max(0, Math.min(92, startL + dx));
+      const ny = Math.max(0, Math.min(88, startT + dy));
+      el.style.left = `${nx}%`;
+      el.style.top  = `${ny}%`;
+      state.data.train.sceneryLayout[idx].x = nx;
+      state.data.train.sceneryLayout[idx].y = ny;
     };
-
     const onUp = () => {
       if (moved) save();
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
     };
-
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
-  });
-
-  el.addEventListener('dblclick', () => {
-    state.data.train.layout.splice(idx, 1);
-    save();
-    toast("Piece removed. It's back in your collection.");
-    renderLayout();
   });
 }

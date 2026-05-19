@@ -115,30 +115,38 @@ export const FISH_VARIETIES = {
   tancho:       { name: 'Tancho',       emoji: '🐟', colour: '#f0f0e8', desc: 'Pure white with one red spot.' },
 };
 
+// isRollingStock → runs on the track, can buy multiple
+// isTrack        → extends the oval, can buy multiple
+// isAccessory    → appears around the track, one of each
+// isScenery      → dragged into the oval interior, one of each
 export const TRAIN_PIECES = [
-  { id: 'steam_engine',       name: 'Steam Engine',       emoji: '🚂', cost: 0,  category: 'Train',    starter: true },
-  { id: 'coal_tender',        name: 'Coal Tender',        emoji: '🚃', cost: 10, category: 'Train' },
-  { id: 'passenger_carriage', name: 'Passenger Carriage', emoji: '🚃', cost: 15, category: 'Train' },
-  { id: 'goods_wagon',        name: 'Goods Wagon',        emoji: '📦', cost: 15, category: 'Train' },
-  { id: 'oak_tree',           name: 'Oak Tree',           emoji: '🌳', cost: 8,  category: 'Scenery' },
-  { id: 'pine_tree',          name: 'Pine Tree',          emoji: '🌲', cost: 8,  category: 'Scenery' },
-  { id: 'mountain',           name: 'Mountain',           emoji: '⛰️', cost: 20, category: 'Scenery' },
-  { id: 'sheep',              name: 'Sheep',              emoji: '🐑', cost: 12, category: 'Animals' },
-  { id: 'cow',                name: 'Cow',                emoji: '🐄', cost: 12, category: 'Animals' },
-  { id: 'horse',              name: 'Horse',              emoji: '🐴', cost: 15, category: 'Animals' },
-  { id: 'village_house',      name: 'Village House',      emoji: '🏡', cost: 25, category: 'Buildings' },
-  { id: 'station',            name: 'Station',            emoji: '🚉', cost: 30, category: 'Buildings' },
-  { id: 'signal_box',         name: 'Signal Box',         emoji: '🏠', cost: 20, category: 'Buildings' },
-  { id: 'footbridge',         name: 'Footbridge',         emoji: '🌉', cost: 25, category: 'Buildings' },
-  // Track pieces — rendered as styled track segments, not emoji
-  { id: 'track_straight',     name: 'Straight Track',     emoji: '━', cost: 5,  category: 'Track', isTrack: true, trackType: 'straight' },
-  { id: 'track_curve',        name: 'Curved Track',       emoji: '╮', cost: 5,  category: 'Track', isTrack: true, trackType: 'curve-br' },
-  { id: 'track_curve_bl',     name: 'Curved Track',       emoji: '╭', cost: 5,  category: 'Track', isTrack: true, trackType: 'curve-bl' },
-  { id: 'track_tunnel',       name: 'Tunnel Mouth',       emoji: '🕳️', cost: 18, category: 'Track' },
-  { id: 'track_buffer',       name: 'Buffer Stop',        emoji: '🛑', cost: 8,  category: 'Track' },
-  { id: 'track_signal',       name: 'Semaphore Signal',   emoji: '🚦', cost: 10, category: 'Track' },
-  { id: 'track_level',        name: 'Level Crossing',     emoji: '⛏️', cost: 12, category: 'Track' },
-  { id: 'track_viaduct',      name: 'Viaduct Section',    emoji: '🏗️', cost: 22, category: 'Track' },
+  // ── Rolling stock (runs on the track) ──
+  { id: 'steam_engine',       name: 'Steam Engine',       emoji: '🚂', cost: 0,  isRollingStock: true, starter: true },
+  { id: 'coal_tender',        name: 'Coal Tender',        emoji: '🪨', cost: 10, isRollingStock: true },
+  { id: 'passenger_carriage', name: 'Passenger Coach',    emoji: '🚃', cost: 15, isRollingStock: true },
+  { id: 'goods_wagon',        name: 'Goods Wagon',        emoji: '🚋', cost: 15, isRollingStock: true },
+  { id: 'dining_car',         name: 'Dining Car',         emoji: '🍽️', cost: 20, isRollingStock: true },
+  { id: 'brake_van',          name: 'Brake Van',          emoji: '🔴', cost: 12, isRollingStock: true },
+  // ── Track extensions (each piece widens the oval) ──
+  { id: 'track_straight',     name: 'Straight Section',   emoji: '━━', cost: 5,  isTrack: true },
+  { id: 'track_curve',        name: 'Curved Section',     emoji: '╰╮', cost: 5,  isTrack: true },
+  // ── Track accessories (auto-placed around the track) ──
+  { id: 'tunnel',             name: 'Tunnel Mouth',       emoji: '🕳️', cost: 18, isAccessory: true },
+  { id: 'signal',             name: 'Semaphore Signal',   emoji: '🚦', cost: 10, isAccessory: true },
+  { id: 'level_crossing',     name: 'Level Crossing',     emoji: '⛓️', cost: 12, isAccessory: true },
+  { id: 'water_tower',        name: 'Water Tower',        emoji: '🏗️', cost: 15, isAccessory: true },
+  { id: 'buffer_stop',        name: 'Buffer Stop',        emoji: '🛑', cost: 8,  isAccessory: true },
+  // ── Scenery (dragged into the oval interior) ──
+  { id: 'oak_tree',           name: 'Oak Tree',           emoji: '🌳', cost: 8,  isScenery: true },
+  { id: 'pine_tree',          name: 'Pine Tree',          emoji: '🌲', cost: 8,  isScenery: true },
+  { id: 'mountain',           name: 'Mountain',           emoji: '⛰️', cost: 20, isScenery: true },
+  { id: 'sheep',              name: 'Sheep',              emoji: '🐑', cost: 12, isScenery: true },
+  { id: 'cow',                name: 'Cow',                emoji: '🐄', cost: 12, isScenery: true },
+  { id: 'horse',              name: 'Horse',              emoji: '🐴', cost: 15, isScenery: true },
+  { id: 'village_house',      name: 'Village House',      emoji: '🏡', cost: 25, isScenery: true },
+  { id: 'station',            name: 'Station',            emoji: '🚉', cost: 30, isScenery: true },
+  { id: 'signal_box',         name: 'Signal Box',         emoji: '🏠', cost: 20, isScenery: true },
+  { id: 'footbridge',         name: 'Footbridge',         emoji: '🌉', cost: 25, isScenery: true },
 ];
 
 // ─── Default save state ──────────────────────────────────────────────────────
@@ -165,8 +173,12 @@ export function defaultState() {
       lastFeedDate: null,
     },
     train: {
+      // Rolling stock + track pieces stored as array (duplicates allowed for multiples)
       ownedPieces: ['steam_engine'],
-      layout: [],
+      // Unlocked scenery/accessory type IDs (set semantics — one of each)
+      unlockedScenery: [],
+      // Placed scenery: { pieceId, x, y } — positions inside the oval (%)
+      sceneryLayout: [],
     },
     pantry: {},
   };
