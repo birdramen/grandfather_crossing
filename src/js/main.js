@@ -7,7 +7,13 @@ import { initTrain } from './train.js';
 import { initKitchen } from './kitchen.js';
 
 async function boot() {
-  await initState();
+  try {
+    await initState();
+  } catch {
+    // Start fresh if save file is corrupt
+    const { defaultState, state } = await import('./state.js');
+    state.data = defaultState();
+  }
   initNav();
   initHome();
   initGarden();

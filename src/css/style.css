@@ -601,6 +601,35 @@ html, body {
   0%   { left: -60px; }
   100% { left: calc(100% + 10px); }
 }
+@keyframes train-run-slow {
+  0%   { left: -60px; }
+  100% { left: calc(100% + 10px); }
+}
+
+.track-layout-selector {
+  position: absolute;
+  top: 10px; left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 10;
+  background: rgba(10,20,8,0.75);
+  border: 1px solid var(--clr-panel-b);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+}
+.track-layout-btn {
+  background: transparent;
+  border: 1px solid var(--clr-panel-b);
+  border-radius: 4px;
+  color: var(--clr-muted);
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.15s;
+}
+.track-layout-btn:hover { border-color: var(--clr-green-lt); color: var(--clr-cream); }
+.track-layout-btn.active { background: var(--clr-green-dk); border-color: var(--clr-green-lt); color: var(--clr-cream); }
 
 .placed-pieces {
   position: absolute;
@@ -645,6 +674,54 @@ html, body {
 .piece-card .piece-cost { font-size: 0.62rem; color: var(--clr-gold); display: block; margin-top: 2px; }
 .piece-card.shop-card.unaffordable { opacity: 0.45; cursor: not-allowed; }
 .piece-card.shop-card.unaffordable:hover { transform: none; }
+
+/* Track pieces rendered as CSS rail segments */
+.track-piece-placed {
+  position: absolute;
+  cursor: grab;
+  z-index: 6;
+}
+.track-piece-placed:active { cursor: grabbing; }
+.track-piece-placed:hover .track-delete-hint { opacity: 1; }
+
+.track-segment {
+  position: relative;
+  background: #7a5c30;
+  border-top: 3px solid #4a3010;
+  border-bottom: 3px solid #4a3010;
+}
+.track-segment.straight {
+  width: 80px; height: 20px;
+  background: repeating-linear-gradient(90deg, #7a5c30 0, #7a5c30 14px, #5a3c18 14px, #5a3c18 20px);
+}
+.track-segment.curve-br {
+  width: 60px; height: 60px;
+  background: none;
+  border: none;
+  border-right: 6px solid #7a5c30;
+  border-bottom: 6px solid #7a5c30;
+  border-radius: 0 0 60px 0;
+}
+.track-segment.curve-bl {
+  width: 60px; height: 60px;
+  background: none;
+  border: none;
+  border-left: 6px solid #7a5c30;
+  border-bottom: 6px solid #7a5c30;
+  border-radius: 0 0 0 60px;
+}
+
+.track-delete-hint {
+  position: absolute;
+  top: -18px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  color: var(--clr-muted);
+  opacity: 0;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+  pointer-events: none;
+}
 
 .token-display { color: var(--clr-gold); font-size: 1rem; margin-left: auto; }
 

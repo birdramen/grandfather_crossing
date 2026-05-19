@@ -1,16 +1,16 @@
 // ─── Game data definitions ───────────────────────────────────────────────────
 
 export const CROPS = {
-  courgette:  { name: 'Courgette',   emoji: '🥒', growHours: 8,  perennial: false, yield: 3, tokenReward: 2 },
-  tomato:     { name: 'Tomato',      emoji: '🍅', growHours: 6,  perennial: false, yield: 2, tokenReward: 2 },
-  carrot:     { name: 'Carrot',      emoji: '🥕', growHours: 4,  perennial: false, yield: 3, tokenReward: 1 },
-  aubergine:  { name: 'Aubergine',   emoji: '🍆', growHours: 10, perennial: false, yield: 2, tokenReward: 2 },
-  cabbage:    { name: 'Cabbage',     emoji: '🥬', growHours: 12, perennial: false, yield: 2, tokenReward: 2 },
-  grape:      { name: 'Grape Vine',  emoji: '🍇', growHours: 16, perennial: true,  yield: 5, tokenReward: 3 },
-  fig:        { name: 'Fig Tree',    emoji: '🌿', growHours: 24, perennial: true,  yield: 4, tokenReward: 3 },
-  rose:       { name: 'Rose',        emoji: '🌹', growHours: 6,  perennial: false, yield: 1, tokenReward: 1 },
-  sunflower:  { name: 'Sunflower',   emoji: '🌻', growHours: 8,  perennial: false, yield: 1, tokenReward: 1 },
-  daisy:      { name: 'Daisy',       emoji: '🌼', growHours: 3,  perennial: false, yield: 2, tokenReward: 1 },
+  courgette:  { name: 'Courgette',   emoji: '🥒', growHours: 0.083, perennial: false, yield: 3, tokenReward: 2 }, // 5 min
+  tomato:     { name: 'Tomato',      emoji: '🍅', growHours: 0.083, perennial: false, yield: 2, tokenReward: 2 }, // 5 min
+  carrot:     { name: 'Carrot',      emoji: '🥕', growHours: 0.05,  perennial: false, yield: 3, tokenReward: 1 }, // 3 min
+  aubergine:  { name: 'Aubergine',   emoji: '🍆', growHours: 0.1,   perennial: false, yield: 2, tokenReward: 2 }, // 6 min
+  cabbage:    { name: 'Cabbage',     emoji: '🥬', growHours: 0.133, perennial: false, yield: 2, tokenReward: 2 }, // 8 min
+  grape:      { name: 'Grape Vine',  emoji: '🍇', growHours: 0.2,   perennial: true,  yield: 5, tokenReward: 3 }, // 12 min
+  fig:        { name: 'Fig Tree',    emoji: '🌿', growHours: 0.25,  perennial: true,  yield: 4, tokenReward: 3 }, // 15 min
+  rose:       { name: 'Rose',        emoji: '🌹', growHours: 0.083, perennial: false, yield: 1, tokenReward: 1 }, // 5 min
+  sunflower:  { name: 'Sunflower',   emoji: '🌻', growHours: 0.1,   perennial: false, yield: 1, tokenReward: 1 }, // 6 min
+  daisy:      { name: 'Daisy',       emoji: '🌼', growHours: 0.033, perennial: false, yield: 2, tokenReward: 1 }, // 2 min
 };
 
 export const RECIPES = [
@@ -130,6 +130,15 @@ export const TRAIN_PIECES = [
   { id: 'station',            name: 'Station',            emoji: '🚉', cost: 30, category: 'Buildings' },
   { id: 'signal_box',         name: 'Signal Box',         emoji: '🏠', cost: 20, category: 'Buildings' },
   { id: 'footbridge',         name: 'Footbridge',         emoji: '🌉', cost: 25, category: 'Buildings' },
+  // Track pieces — rendered as styled track segments, not emoji
+  { id: 'track_straight',     name: 'Straight Track',     emoji: '━', cost: 5,  category: 'Track', isTrack: true, trackType: 'straight' },
+  { id: 'track_curve',        name: 'Curved Track',       emoji: '╮', cost: 5,  category: 'Track', isTrack: true, trackType: 'curve-br' },
+  { id: 'track_curve_bl',     name: 'Curved Track',       emoji: '╭', cost: 5,  category: 'Track', isTrack: true, trackType: 'curve-bl' },
+  { id: 'track_tunnel',       name: 'Tunnel Mouth',       emoji: '🕳️', cost: 18, category: 'Track' },
+  { id: 'track_buffer',       name: 'Buffer Stop',        emoji: '🛑', cost: 8,  category: 'Track' },
+  { id: 'track_signal',       name: 'Semaphore Signal',   emoji: '🚦', cost: 10, category: 'Track' },
+  { id: 'track_level',        name: 'Level Crossing',     emoji: '⛏️', cost: 12, category: 'Track' },
+  { id: 'track_viaduct',      name: 'Viaduct Section',    emoji: '🏗️', cost: 22, category: 'Track' },
 ];
 
 // ─── Default save state ──────────────────────────────────────────────────────
@@ -168,12 +177,24 @@ export function defaultState() {
 export const state = { data: null };
 
 export async function initState() {
-  const saved = await window.gameAPI.loadGame();
-  state.data = saved ?? defaultState();
+  try {
+    const saved = window.gameAPI
+      ? await window.gameAPI.loadGame()
+      : JSON.parse(localStorage.getItem('philips-garden') ?? 'null');
+    state.data = saved ?? defaultState();
+  } catch {
+    state.data = defaultState();
+  }
 }
 
 export function save() {
-  window.gameAPI.saveGame(state.data);
+  try {
+    if (window.gameAPI) {
+      window.gameAPI.saveGame(state.data);
+    } else {
+      localStorage.setItem('philips-garden', JSON.stringify(state.data));
+    }
+  } catch { /* ignore save errors */ }
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
