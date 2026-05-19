@@ -1,4 +1,4 @@
-import { state, save, addTokens, removeFromInventory, canAffordRecipe, CROPS, RECIPES } from './state.js';
+import { state, save, addTokens, removeFromInventory, canAffordRecipe, allCrops, RECIPES } from './state.js';
 import { onEnter, toast } from './nav.js';
 
 export function initKitchen() {
@@ -25,7 +25,7 @@ function renderRecipes() {
       ? '<span class="recipe-ingredient have">No garden ingredients needed</span>'
       : Object.entries(recipe.ingredients).map(([key, qty]) => {
           const have = (state.data.garden.inventory[key] ?? 0) >= qty;
-          const crop = CROPS[key];
+          const crop = allCrops(state.data.market)[key];
           return `<span class="recipe-ingredient ${have ? 'have' : 'need'}">${crop?.emoji ?? ''} ${qty}× ${crop?.name ?? key}</span>`;
         }).join(' ');
 

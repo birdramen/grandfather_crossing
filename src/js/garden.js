@@ -1,13 +1,15 @@
-import { state, save, addTokens, addToInventory, CROPS, now } from './state.js';
+import { state, save, addTokens, addToInventory, allCrops, now } from './state.js';
 import { onEnter, toast } from './nav.js';
 
 let activeTool = 'plant';
 let selectedPlotId = null;
 
+// Look up a crop key in base crops + any market-unlocked crops
+function getCrop(key) { return allCrops(state.data.market)[key]; }
+
 export function initGarden() {
   onEnter('garden', renderGarden);
 
-  // Tool buttons
   document.querySelectorAll('.tool-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       activeTool = btn.dataset.tool;
@@ -17,13 +19,11 @@ export function initGarden() {
     });
   });
 
-  // Seed modal close
   document.getElementById('close-seed-modal').addEventListener('click', closeModal);
   document.getElementById('seed-modal').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeModal();
   });
 
-  // Tick growth every 30 seconds
   setInterval(() => {
     if (document.getElementById('screen-garden').classList.contains('active')) renderGarden();
   }, 30_000);
@@ -42,11 +42,10 @@ function tickWithering() {
   let changed = false;
   for (const plot of state.data.garden.plots) {
     if (!plot.crop || plot.withered) continue;
-    const crop = CROPS[plot.crop];
-    if (!crop || crop.perennial) continue;
+    const def = getCrop(plot.crop);
+    if (!def || def.perennial) continue;
     if (!plot.lastWatered) continue;
-    const hoursSinceWater = (now() - plot.lastWatered) / 3_600_000;
-    if (hoursSinceWater > 48) {
+    if ((now() - plot.lastWatered) / 3_600_000 > 48) {
       plot.withered = true;
       changed = true;
     }
@@ -59,9 +58,7 @@ function tickWithering() {
 function renderGrid() {
   const grid = document.getElementById('garden-grid');
   grid.innerHTML = '';
-  state.data.garden.plots.forEach(plot => {
-    grid.appendChild(buildPlotEl(plot));
-  });
+  state.data.garden.plots.forEach(plot => grid.appendChild(buildPlotEl(plot)));
 }
 
 function buildPlotEl(plot) {
@@ -76,21 +73,15 @@ function buildPlotEl(plot) {
     el.classList.add('withered');
     el.innerHTML = `<span class="plot-emoji">🥀</span><span class="plot-label">Withered</span><span class="plot-sub">Tap to clear</span>`;
   } else {
-    const crop = CROPS[plot.crop];
+    const def = getCrop(plot.crop);
     const ready = isReady(plot);
     const stage = getStage(plot);
-
-    if (ready) {
-      el.classList.add(crop.perennial ? 'perennial-ready' : 'ready');
-    }
-
-    const stageEmoji = stageIcon(plot.crop, stage, ready);
+    if (ready) el.classList.add(def.perennial ? 'perennial-ready' : 'ready');
     const waterDotClass = isWateredRecently(plot) ? '' : 'dry';
-
     el.innerHTML = `
       <div class="plot-water-dot ${waterDotClass}" title="${waterDotClass ? 'Needs water!' : 'Watered'}"></div>
-      <span class="plot-emoji">${stageEmoji}</span>
-      <span class="plot-label">${crop.name}</span>
+      <span class="plot-emoji">${stageIcon(plot.crop, stage)}</span>
+      <span class="plot-label">${def.name}</span>
       <span class="plot-sub">${ready ? '✨ Ready!' : timeLeft(plot)}</span>
     `;
   }
@@ -103,23 +94,17 @@ function buildPlotEl(plot) {
 
 function onPlotClick(plot) {
   if (activeTool === 'plant') {
-    if (!plot.crop) {
-      openSeedModal(plot.id);
-    } else if (plot.withered) {
-      clearPlot(plot);
-    } else {
-      toast("This plot already has something growing. Use the 🧺 Harvest tool when it's ready.");
-    }
+    if (!plot.crop) openSeedModal(plot.id);
+    else if (plot.withered) clearPlot(plot);
+    else toast("This plot already has something growing. Use the 🧺 Harvest tool when it's ready.");
     return;
   }
-
   if (activeTool === 'water') {
     if (!plot.crop) { toast("Nothing to water here."); return; }
-    if (plot.withered) { toast("It's too late for this one — clear the plot first."); return; }
+    if (plot.withered) { toast("It's too late — clear the plot first."); return; }
     waterPlot(plot);
     return;
   }
-
   if (activeTool === 'harvest') {
     if (!plot.crop) { toast("Nothing to harvest here."); return; }
     if (plot.withered) { clearPlot(plot); return; }
@@ -137,20 +122,16 @@ function waterPlot(plot) {
 }
 
 function harvestPlot(plot) {
-  const crop = CROPS[plot.crop];
-  addToInventory(plot.crop, crop.yield);
-  addTokens(crop.tokenReward);
-
-  showHarvestPop(crop.emoji, crop.yield);
-  toast(`🧺 Harvested ${crop.yield} ${crop.name}! +${crop.tokenReward} workshop tokens.`);
-
-  if (crop.perennial) {
+  const def = getCrop(plot.crop);
+  addToInventory(plot.crop, def.yield);
+  addTokens(def.tokenReward);
+  showHarvestPop(def.emoji, def.yield);
+  toast(`🧺 Harvested ${def.yield} ${def.name}! +${def.tokenReward} workshop tokens.`);
+  if (def.perennial) {
     plot.harvestedAt = now();
-    // stays planted, regrows
   } else {
     clearPlotData(plot);
   }
-
   save();
   renderGrid();
   renderInventory();
@@ -164,11 +145,8 @@ function clearPlot(plot) {
 }
 
 function clearPlotData(plot) {
-  plot.crop = null;
-  plot.plantedAt = null;
-  plot.lastWatered = null;
-  plot.withered = false;
-  plot.harvestedAt = null;
+  plot.crop = null; plot.plantedAt = null; plot.lastWatered = null;
+  plot.withered = false; plot.harvestedAt = null;
 }
 
 // ─── Seed modal ───────────────────────────────────────────────────────────────
@@ -177,13 +155,13 @@ function openSeedModal(plotId) {
   selectedPlotId = plotId;
   const grid = document.getElementById('seed-grid');
   grid.innerHTML = '';
-  for (const [key, crop] of Object.entries(CROPS)) {
+  for (const [key, def] of Object.entries(allCrops(state.data.market))) {
     const btn = document.createElement('button');
     btn.className = 'seed-btn';
     btn.innerHTML = `
-      <span class="seed-btn-emoji">${crop.emoji}</span>
-      <span class="seed-btn-name">${crop.name}</span>
-      <span class="seed-btn-time">${crop.growHours}h to grow${crop.perennial ? ' · perennial' : ''}</span>
+      <span class="seed-btn-emoji">${def.emoji}</span>
+      <span class="seed-btn-name">${def.name}</span>
+      <span class="seed-btn-time">${formatGrowTime(def.growHours)}${def.perennial ? ' · perennial' : ''}</span>
     `;
     btn.addEventListener('click', () => plantSeed(key));
     grid.appendChild(btn);
@@ -199,18 +177,15 @@ function closeModal() {
 function plantSeed(cropKey) {
   const plot = state.data.garden.plots.find(p => p.id === selectedPlotId);
   if (!plot) return;
-  plot.crop = cropKey;
-  plot.plantedAt = now();
-  plot.lastWatered = now();
-  plot.withered = false;
-  plot.harvestedAt = null;
+  plot.crop = cropKey; plot.plantedAt = now(); plot.lastWatered = now();
+  plot.withered = false; plot.harvestedAt = null;
   save();
   closeModal();
-  toast(`🌱 Planted ${CROPS[cropKey].name}!`);
+  toast(`🌱 Planted ${getCrop(cropKey).name}!`);
   renderGrid();
 }
 
-// ─── Inventory ────────────────────────────────────────────────────────────────
+// ─── Inventory sidebar ────────────────────────────────────────────────────────
 
 function renderInventory() {
   const inv = state.data.garden.inventory;
@@ -218,17 +193,13 @@ function renderInventory() {
   const empty = document.getElementById('basket-empty');
   el.innerHTML = '';
   const entries = Object.entries(inv).filter(([, v]) => v > 0);
-  if (entries.length === 0) {
-    empty.style.display = 'block';
-    return;
-  }
-  empty.style.display = 'none';
+  empty.style.display = entries.length ? 'none' : 'block';
   entries.forEach(([key, qty]) => {
-    const crop = CROPS[key];
-    if (!crop) return;
+    const def = getCrop(key);
+    if (!def) return;
     const row = document.createElement('div');
     row.className = 'inv-row';
-    row.innerHTML = `<span>${crop.emoji} ${crop.name}</span><span class="inv-count">×${qty}</span>`;
+    row.innerHTML = `<span>${def.emoji} ${def.name}</span><span class="inv-count">×${qty}</span>`;
     el.appendChild(row);
   });
 }
@@ -237,41 +208,48 @@ function renderInventory() {
 
 function isReady(plot) {
   if (!plot.crop) return false;
-  const crop = CROPS[plot.crop];
-  const start = (crop.perennial && plot.harvestedAt) ? plot.harvestedAt : plot.plantedAt;
-  return (now() - start) / 3_600_000 >= crop.growHours;
+  const def = getCrop(plot.crop);
+  if (!def) return false;
+  const start = (def.perennial && plot.harvestedAt) ? plot.harvestedAt : plot.plantedAt;
+  return (now() - start) / 3_600_000 >= def.growHours;
 }
 
 function getStage(plot) {
   if (!plot.crop) return 0;
-  const crop = CROPS[plot.crop];
-  const start = (crop.perennial && plot.harvestedAt) ? plot.harvestedAt : plot.plantedAt;
-  const frac = Math.min(1, (now() - start) / (crop.growHours * 3_600_000));
+  const def = getCrop(plot.crop);
+  if (!def) return 0;
+  const start = (def.perennial && plot.harvestedAt) ? plot.harvestedAt : plot.plantedAt;
+  const frac = Math.min(1, (now() - start) / (def.growHours * 3_600_000));
   if (frac >= 1) return 3;
   if (frac >= 0.5) return 2;
   return 1;
 }
 
-function stageIcon(cropKey, stage, ready) {
-  const stages = { 1: '🌱', 2: '🌿', 3: CROPS[cropKey]?.emoji ?? '🌿' };
-  return stages[stage] ?? '🌱';
+function stageIcon(cropKey, stage) {
+  const def = getCrop(cropKey);
+  return ({ 1: '🌱', 2: '🌿', 3: def?.emoji ?? '🌿' })[stage] ?? '🌱';
 }
 
 function isWateredRecently(plot) {
-  if (!plot.lastWatered) return false;
-  return (now() - plot.lastWatered) / 3_600_000 < 24;
+  return plot.lastWatered && (now() - plot.lastWatered) / 3_600_000 < 24;
 }
 
 function timeLeft(plot) {
   if (!plot.crop) return '';
-  const crop = CROPS[plot.crop];
-  const start = (crop.perennial && plot.harvestedAt) ? plot.harvestedAt : plot.plantedAt;
-  const remainMs = (crop.growHours * 3_600_000) - (now() - start);
+  const def = getCrop(plot.crop);
+  if (!def) return '';
+  const start = (def.perennial && plot.harvestedAt) ? plot.harvestedAt : plot.plantedAt;
+  const remainMs = (def.growHours * 3_600_000) - (now() - start);
   if (remainMs <= 0) return 'Ready!';
   const hrs = Math.floor(remainMs / 3_600_000);
   const mins = Math.floor((remainMs % 3_600_000) / 60_000);
-  if (hrs > 0) return `~${hrs}h ${mins}m left`;
-  return `~${mins}m left`;
+  return hrs > 0 ? `~${hrs}h ${mins}m left` : `~${mins}m left`;
+}
+
+function formatGrowTime(hours) {
+  if (hours < 1 / 60) return `${Math.round(hours * 3600)}s`;
+  if (hours < 1) return `${Math.round(hours * 60)}m`;
+  return `${hours}h`;
 }
 
 function showHarvestPop(emoji, qty) {
@@ -285,9 +263,9 @@ function showHarvestPop(emoji, qty) {
 
 function updateTip() {
   const tips = {
-    plant: 'Click an empty plot to plant a seed. Perennial crops (figs, grapes) regrow after each harvest.',
+    plant: 'Click an empty plot to plant. Perennial crops (figs, grapes, market fruits) regrow each harvest.',
     water: 'Click a growing crop to water it. Plants wither if left dry for 2 days.',
-    harvest: 'Click a glowing plot to harvest. Perennial plants stay in the ground.',
+    harvest: 'Click a glowing plot to harvest. Market crops appear here once unlocked!',
   };
   document.getElementById('garden-tip').textContent = tips[activeTool] ?? '';
 }

@@ -731,6 +731,140 @@ html, body {
 }
 .pantry-count { color: var(--clr-gold); font-family: var(--font-mono); }
 
+/* ──────────────── MARKET ──────────────── */
+
+.market-bg {
+  background:
+    linear-gradient(180deg,
+      #87ceeb 0%, #87ceeb 28%,
+      #7ab05a 28%, #5a8a3a 55%,
+      #8b7355 55%, #6a4a20 100%);
+}
+
+.market-body {
+  display: flex;
+  flex: 1;
+  gap: 16px;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.character-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  align-content: start;
+  overflow-y: auto;
+}
+
+.char-card {
+  background: var(--clr-panel);
+  border: 2px solid var(--clr-panel-b);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  transition: border-color 0.15s, transform 0.12s;
+  box-shadow: var(--shadow);
+}
+.char-card:hover { border-color: var(--clr-gold); transform: translateY(-2px); }
+
+.char-emoji { font-size: 2.8rem; }
+.char-name { font-family: var(--font-serif); font-size: 1.1rem; color: var(--clr-gold); }
+.char-relation { font-size: 0.75rem; color: var(--clr-muted); }
+.char-flavour { font-size: 0.78rem; color: var(--clr-cream); font-style: italic; line-height: 1.4; margin: 4px 0; }
+
+.char-badges { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.badge {
+  font-size: 0.68rem;
+  padding: 3px 8px;
+  border-radius: 20px;
+  border: 1px solid;
+}
+.badge-trade { color: var(--clr-gold);     border-color: var(--clr-gold);     background: rgba(212,168,75,0.12); }
+.badge-gift  { color: var(--clr-green-lt); border-color: var(--clr-green-lt); background: rgba(109,184,79,0.12); }
+.badge-done  { color: var(--clr-muted);    border-color: var(--clr-muted);    background: rgba(100,100,100,0.1); }
+
+.char-btn { margin-top: 6px; width: 100%; }
+
+.market-aside {
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+/* ── Market modal ── */
+.market-modal-inner {
+  max-width: 560px;
+  width: 92%;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+
+.modal-char-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+.modal-char-emoji { font-size: 2.8rem; }
+.modal-char-name { font-family: var(--font-serif); font-size: 1.2rem; color: var(--clr-gold); }
+.modal-char-rel { font-size: 0.8rem; color: var(--clr-muted); }
+.modal-char-flavour { font-style: italic; font-size: 0.88rem; color: var(--clr-cream); margin-bottom: 12px; line-height: 1.5; }
+.modal-divider { border: none; border-top: 1px solid var(--clr-green-dk); margin: 12px 0; }
+.modal-section-title { color: var(--clr-gold); font-size: 0.95rem; margin-bottom: 8px; font-family: var(--font-serif); }
+
+/* ── Trades ── */
+.trade-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 6px; }
+.trade-card {
+  background: rgba(255,255,255,0.04);
+  border: 2px solid var(--clr-green-dk);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.trade-card.trade-ready { border-color: var(--clr-gold); }
+.trade-reward strong { color: var(--clr-cream); font-size: 0.95rem; display: block; margin-bottom: 2px; }
+.trade-needs { display: flex; flex-wrap: wrap; gap: 6px; font-size: 0.78rem; }
+.trade-needs .have { color: var(--clr-green-lt); }
+.trade-needs .need { color: #e07070; }
+
+/* ── Gift picker ── */
+.gift-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 12px 0;
+}
+.gift-item-btn {
+  background: var(--clr-green-dk);
+  border: 2px solid var(--clr-panel-b);
+  border-radius: var(--radius-sm);
+  color: var(--clr-cream);
+  padding: 10px 6px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.gift-item-btn:hover { border-color: var(--clr-green-lt); transform: translateY(-2px); }
+.gift-item-btn.loved { border-color: var(--clr-gold); background: rgba(80,60,10,0.5); }
+.gift-emoji { font-size: 1.6rem; }
+.gift-label { font-size: 0.68rem; font-weight: bold; }
+.gift-qty { font-size: 0.65rem; color: var(--clr-muted); }
+.gift-tokens { font-size: 0.65rem; color: var(--clr-gold); }
+
 /* ──────────────── TOAST ──────────────── */
 
 .toast {

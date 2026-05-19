@@ -46,6 +46,10 @@
           <span class="nav-icon">🫙</span>
           <span class="nav-label">The Kitchen</span>
         </button>
+        <button class="nav-btn" data-screen="market">
+          <span class="nav-icon">🛒</span>
+          <span class="nav-label">The Market</span>
+        </button>
       </nav>
       <div class="home-footer">
         <span id="tokens-home">🔧 0 workshop tokens</span>
@@ -187,6 +191,41 @@
           <div id="pantry-list" class="pantry-list"></div>
           <div id="pantry-empty" class="empty-note">The pantry is bare — time to get cooking!</div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MARKET ═══ -->
+  <div id="screen-market" class="screen">
+    <div class="scene-bg market-bg"></div>
+    <div class="scene-overlay">
+      <header class="scene-header">
+        <button class="back-btn" data-screen="home">← Home</button>
+        <h2>The Village Market</h2>
+      </header>
+      <div class="market-body">
+        <div class="character-grid" id="character-grid">
+          <!-- Character cards rendered by JS -->
+        </div>
+        <aside class="market-aside">
+          <div class="panel">
+            <h3 class="panel-title">🧺 Your Basket</h3>
+            <div id="market-inventory" class="inventory-list"></div>
+            <div id="market-basket-empty" class="empty-note">Nothing to offer today.</div>
+          </div>
+          <div class="panel">
+            <h3 class="panel-title">🫙 Your Pantry</h3>
+            <div id="market-pantry" class="pantry-list"></div>
+            <div id="market-pantry-empty" class="empty-note">Pantry is empty.</div>
+          </div>
+        </aside>
+      </div>
+    </div>
+    <!-- Character modal -->
+    <div id="market-modal" class="modal-backdrop hidden">
+      <div class="modal market-modal-inner">
+        <div id="market-modal-content"></div>
+        <button class="btn-secondary" id="close-market-modal" style="margin-top:14px">Close</button>
       </div>
     </div>
   </div>

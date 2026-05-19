@@ -5,6 +5,7 @@ import { initGarden } from './garden.js';
 import { initPond } from './pond.js';
 import { initTrain } from './train.js';
 import { initKitchen } from './kitchen.js';
+import { initMarket } from './market.js';
 
 async function boot() {
   try {
@@ -20,6 +21,7 @@ async function boot() {
   initPond();
   initTrain();
   initKitchen();
+  initMarket();
   goTo('home');
 }
 
