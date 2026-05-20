@@ -367,7 +367,18 @@ export async function initState() {
     const saved = window.gameAPI
       ? await window.gameAPI.loadGame()
       : JSON.parse(localStorage.getItem('philips-garden') ?? 'null');
-    state.data = saved ?? defaultState();
+    if (saved) {
+      const fresh = defaultState();
+      // Patch any top-level keys added after the save was created
+      if (!saved.pantry)  saved.pantry  = fresh.pantry;
+      if (!saved.market)  saved.market  = fresh.market;
+      if (!saved.market.completedTrades) saved.market.completedTrades = [];
+      if (!saved.market.lastGiftDate)    saved.market.lastGiftDate    = {};
+      if (!saved.market.unlockedCrops)   saved.market.unlockedCrops   = [];
+      state.data = saved;
+    } else {
+      state.data = defaultState();
+    }
   } catch {
     state.data = defaultState();
   }
