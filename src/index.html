@@ -234,5 +234,16 @@
   <div id="toast" class="toast hidden"></div>
 
   <script type="module" src="js/main.js"></script>
+  <script>
+    // Hard fallback: if the module never runs, clear the loading screen after 6s
+    setTimeout(function() {
+      var loading = document.getElementById('screen-loading');
+      var home = document.getElementById('screen-home');
+      if (loading && loading.classList.contains('active')) {
+        loading.classList.remove('active');
+        if (home) home.classList.add('active');
+      }
+    }, 6000);
+  </script>
 </body>
 </html>

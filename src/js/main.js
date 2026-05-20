@@ -10,11 +10,6 @@ import { initMarket } from './market.js';
 async function boot() {
   try {
     await initState();
-  } catch {
-    const { defaultState, state } = await import('./state.js');
-    state.data = defaultState();
-  }
-  try {
     initNav();
     initHome();
     initGarden();
@@ -23,9 +18,10 @@ async function boot() {
     initKitchen();
     initMarket();
   } catch (e) {
-    console.error('Init error:', e);
+    console.error('Boot error:', e);
+  } finally {
+    goTo('home');
   }
-  goTo('home');
 }
 
 boot();
