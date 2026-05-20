@@ -11,17 +11,20 @@ async function boot() {
   try {
     await initState();
   } catch {
-    // Start fresh if save file is corrupt
     const { defaultState, state } = await import('./state.js');
     state.data = defaultState();
   }
-  initNav();
-  initHome();
-  initGarden();
-  initPond();
-  initTrain();
-  initKitchen();
-  initMarket();
+  try {
+    initNav();
+    initHome();
+    initGarden();
+    initPond();
+    initTrain();
+    initKitchen();
+    initMarket();
+  } catch (e) {
+    console.error('Init error:', e);
+  }
   goTo('home');
 }
 

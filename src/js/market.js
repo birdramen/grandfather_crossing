@@ -11,8 +11,8 @@ let giftMode = false; // true = showing gift picker
 export function initMarket() {
   onEnter('market', renderMarket);
 
-  document.getElementById('close-market-modal').addEventListener('click', closeModal);
-  document.getElementById('market-modal').addEventListener('click', e => {
+  document.getElementById('close-market-modal')?.addEventListener('click', closeModal);
+  document.getElementById('market-modal')?.addEventListener('click', e => {
     if (e.target === e.currentTarget) closeModal();
   });
 }
