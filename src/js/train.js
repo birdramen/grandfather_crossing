@@ -60,9 +60,10 @@ function buildSVGTrack() {
   const dur = (trackLen / 120).toFixed(1); // ~120px/s
 
   const trainStr = buildTrainString();
+  const unlockedSc = state.data.train.unlockedScenery ?? [];
 
   // Accessories dotted around the outside of the oval
-  const accessories = buildAccessorySVG(cx, cy, rx, ry, owned);
+  const accessories = buildAccessorySVG(cx, cy, rx, ry, unlockedSc);
 
   const svg = `
 <svg class="track-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
@@ -103,7 +104,7 @@ function buildSVGTrack() {
   positionSceneryIsland(cx, cy, rx, ry, W, H);
 
   // Start collision detection if there are accessories to hit
-  const hasAccessories = owned.some(id => TRAIN_PIECES.find(p => p.id === id)?.isAccessory);
+  const hasAccessories = unlockedSc.some(id => TRAIN_PIECES.find(p => p.id === id)?.isAccessory);
   startCollisionCheck(cx, cy, rx, ry, parseFloat(dur), hasAccessories);
 }
 
@@ -130,7 +131,8 @@ function checkCollisions() {
   const trainX = cx + rx * Math.cos(theta);
   const trainY = cy + ry * Math.sin(theta);
 
-  const accessoryIds = state.data.train.ownedPieces.filter(id =>
+  const unlockedSc = state.data.train.unlockedScenery ?? [];
+  const accessoryIds = unlockedSc.filter(id =>
     TRAIN_PIECES.find(p => p.id === id)?.isAccessory
   );
 
@@ -140,10 +142,9 @@ function checkCollisions() {
     const ax = cx + Math.cos(rad) * rx * ACCESSORY_R;
     const ay = cy + Math.sin(rad) * ry * ACCESSORY_R * 0.85;
     const dist = Math.hypot(trainX - ax, trainY - ay);
-    if (dist < 55) {
+    if (dist < 65) {
       const def = TRAIN_PIECES.find(p => p.id === id);
-      const idx = state.data.train.ownedPieces.indexOf(id);
-      if (idx !== -1) state.data.train.ownedPieces.splice(idx, 1);
+      state.data.train.unlockedScenery = unlockedSc.filter(uid => uid !== id);
       save();
       toast(`💥 The train demolished the ${def?.name ?? id}!`);
       demolished = true;
@@ -168,11 +169,8 @@ function buildTrainString() {
   }).join('') || '🚂';
 }
 
-function buildAccessorySVG(cx, cy, rx, ry, owned) {
-  const accessories = owned.filter(id => {
-    const p = TRAIN_PIECES.find(p => p.id === id);
-    return p?.isAccessory;
-  });
+function buildAccessorySVG(cx, cy, rx, ry, unlockedSc) {
+  const accessories = unlockedSc.filter(id => TRAIN_PIECES.find(p => p.id === id)?.isAccessory);
   if (!accessories.length) return '';
 
   // Fixed positions around the outside of the oval (angle in degrees)
