@@ -175,7 +175,7 @@ export function allCrops(marketState) {
 export const TRAIN_PIECES = [
   // ── Rolling stock (runs on the track) ──
   { id: 'steam_engine',       name: 'Steam Engine',       emoji: '🚂', cost: 0,  isRollingStock: true, starter: true },
-  { id: 'coal_tender',        name: 'Coal Tender',        emoji: '🪨', cost: 10, isRollingStock: true },
+  { id: 'coal_tender',        name: 'Coal Tender',        emoji: '🟫', cost: 10, isRollingStock: true },
   { id: 'passenger_carriage', name: 'Passenger Coach',    emoji: '🚃', cost: 15, isRollingStock: true },
   { id: 'goods_wagon',        name: 'Goods Wagon',        emoji: '🚋', cost: 15, isRollingStock: true },
   { id: 'dining_car',         name: 'Dining Car',         emoji: '🍽️', cost: 20, isRollingStock: true },
