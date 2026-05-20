@@ -661,7 +661,20 @@ html, body {
 .piece-card .piece-cost { font-size: 0.62rem; color: var(--clr-gold); display: block; margin-top: 2px; }
 .piece-card.shop-card.unaffordable { opacity: 0.45; cursor: not-allowed; }
 .piece-card.shop-card.unaffordable:hover { transform: none; }
-
+.remove-piece-btn {
+  display: block;
+  margin-top: 4px;
+  background: none;
+  border: 1px solid rgba(200,80,80,0.5);
+  border-radius: 4px;
+  color: #e07070;
+  font-size: 0.6rem;
+  padding: 1px 5px;
+  cursor: pointer;
+  line-height: 1.4;
+}
+.remove-piece-btn:hover { background: rgba(200,80,80,0.2); }
+.remove-piece-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
 .token-display { color: var(--clr-gold); font-size: 1rem; margin-left: auto; }
 

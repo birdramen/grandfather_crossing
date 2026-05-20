@@ -247,26 +247,80 @@ function buyPiece(piece) {
 
 function renderOwnedScenery() {
   const unlockedSc = state.data.train.unlockedScenery ?? [];
+  const owned = state.data.train.ownedPieces;
   const grid = document.getElementById('owned-scenery');
   grid.innerHTML = '';
 
-  const sceneryPieces = TRAIN_PIECES.filter(p => p.isScenery && unlockedSc.includes(p.id));
-  if (sceneryPieces.length === 0) {
+  // Rolling stock (removable, but keep at least one steam engine)
+  const rollingStock = TRAIN_PIECES.filter(p => p.isRollingStock);
+  const ownedStock = rollingStock.filter(p => owned.includes(p.id));
+  if (ownedStock.length > 0) {
+    const heading = document.createElement('p');
+    heading.className = 'shop-section-label';
+    heading.textContent = '🚂 Your Rolling Stock';
+    grid.appendChild(heading);
+    const stockGrid = document.createElement('div');
+    stockGrid.className = 'pieces-grid';
+    rollingStock.forEach(piece => {
+      const count = owned.filter(id => id === piece.id).length;
+      if (count === 0) return;
+      const canRemove = !(piece.id === 'steam_engine' && count === 1);
+      const card = document.createElement('div');
+      card.className = 'piece-card';
+      card.innerHTML = `
+        <span class="piece-emoji">${piece.emoji}</span>
+        <span class="piece-name">${piece.name} ×${count}</span>
+        <button class="remove-piece-btn" title="Remove one" ${canRemove ? '' : 'disabled'}>✕</button>
+      `;
+      card.querySelector('.remove-piece-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        if (!canRemove) return;
+        const idx = state.data.train.ownedPieces.lastIndexOf(piece.id);
+        if (idx !== -1) state.data.train.ownedPieces.splice(idx, 1);
+        save();
+        toast(`${piece.emoji} ${piece.name} removed.`);
+        renderTrain();
+      });
+      stockGrid.appendChild(card);
+    });
+    grid.appendChild(stockGrid);
+  }
+
+  // Scenery/accessories (placeable + removable)
+  const sceneryPieces = TRAIN_PIECES.filter(p => (p.isScenery || p.isAccessory) && unlockedSc.includes(p.id));
+  if (sceneryPieces.length === 0 && ownedStock.length === 0) {
     grid.innerHTML = '<p class="tip-text">Buy scenery from the shop to decorate the island!</p>';
     return;
   }
-
-  sceneryPieces.forEach(piece => {
-    const card = document.createElement('div');
-    card.className = 'piece-card';
-    card.title = `Click to place ${piece.name} inside the oval`;
-    card.innerHTML = `
-      <span class="piece-emoji">${piece.emoji}</span>
-      <span class="piece-name">${piece.name}</span>
-    `;
-    card.addEventListener('click', () => placeScenery(piece));
-    grid.appendChild(card);
-  });
+  if (sceneryPieces.length > 0) {
+    const heading = document.createElement('p');
+    heading.className = 'shop-section-label';
+    heading.textContent = '🌿 Your Scenery';
+    grid.appendChild(heading);
+    const scGrid = document.createElement('div');
+    scGrid.className = 'pieces-grid';
+    sceneryPieces.forEach(piece => {
+      const card = document.createElement('div');
+      card.className = 'piece-card';
+      card.title = `Click to place ${piece.name} inside the oval`;
+      card.innerHTML = `
+        <span class="piece-emoji">${piece.emoji}</span>
+        <span class="piece-name">${piece.name}</span>
+        <button class="remove-piece-btn" title="Remove from collection">✕</button>
+      `;
+      card.querySelector('.remove-piece-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        state.data.train.unlockedScenery = unlockedSc.filter(id => id !== piece.id);
+        state.data.train.sceneryLayout = (state.data.train.sceneryLayout ?? []).filter(p => p.pieceId !== piece.id);
+        save();
+        toast(`${piece.emoji} ${piece.name} removed.`);
+        renderTrain();
+      });
+      card.addEventListener('click', () => placeScenery(piece));
+      scGrid.appendChild(card);
+    });
+    grid.appendChild(scGrid);
+  }
 }
 
 // ─── Scenery placement (inside the oval) ─────────────────────────────────────
