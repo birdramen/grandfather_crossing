@@ -4,9 +4,6 @@ import { onEnter, toast } from './nav.js';
 // Rolling stock order: how carriages line up behind the engine
 const STOCK_ORDER = ['steam_engine', 'coal_tender', 'dining_car', 'passenger_carriage', 'goods_wagon', 'brake_van'];
 
-// Collision detection state
-let collisionTimer = null;
-
 export function initTrain() {
   onEnter('train', renderTrain);
 }
@@ -55,10 +52,9 @@ function buildSVGTrack() {
   const dur = (trackLen / 120).toFixed(1); // ~120px/s
 
   const trainStr = buildTrainString();
-  const unlockedSc = state.data.train.unlockedScenery ?? [];
 
   // Accessories dotted around the outside of the oval
-  const accessories = buildAccessorySVG(cx, cy, rx, ry, unlockedSc);
+  const accessories = buildAccessorySVG(cx, cy, rx, ry, owned);
 
   const svg = `
 <svg class="track-svg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
@@ -97,50 +93,6 @@ function buildSVGTrack() {
 
   // Position the scenery island to cover the oval interior
   positionSceneryIsland(cx, cy, rx, ry, W, H);
-
-  // Start collision detection if there are accessories to hit
-  const hasAccessories = unlockedSc.some(id => TRAIN_PIECES.find(p => p.id === id)?.isAccessory);
-  startCollisionCheck(hasAccessories);
-}
-
-// ─── Collision detection ──────────────────────────────────────────────────────
-
-function startCollisionCheck(hasAccessories) {
-  clearInterval(collisionTimer);
-  collisionTimer = null;
-  if (!hasAccessories) return;
-  collisionTimer = setInterval(checkCollisions, 300);
-}
-
-function checkCollisions() {
-  const scene = document.getElementById('train-scene');
-  if (!scene || !document.getElementById('screen-train')?.classList.contains('active')) return;
-
-  // Read the train's actual rendered position from the DOM
-  const trainEl = scene.querySelector('svg text');
-  if (!trainEl) return;
-  const tr = trainEl.getBoundingClientRect();
-  const trainX = tr.left + tr.width / 2;
-  const trainY = tr.top  + tr.height / 2;
-
-  // Each accessory <text> has data-accessory-id set in buildAccessorySVG
-  let demolished = false;
-  scene.querySelectorAll('[data-accessory-id]').forEach(el => {
-    const id = el.dataset.accessoryId;
-    const ar = el.getBoundingClientRect();
-    const ax = ar.left + ar.width / 2;
-    const ay = ar.top  + ar.height / 2;
-    if (Math.hypot(trainX - ax, trainY - ay) < 48) {
-      const def = TRAIN_PIECES.find(p => p.id === id);
-      const sc = state.data.train.unlockedScenery ?? [];
-      state.data.train.unlockedScenery = sc.filter(uid => uid !== id);
-      save();
-      toast(`💥 The train demolished the ${def?.name ?? id}!`);
-      demolished = true;
-    }
-  });
-
-  if (demolished) renderTrain();
 }
 
 function ellipsePath(cx, cy, rx, ry) {
@@ -158,8 +110,11 @@ function buildTrainString() {
   }).join('') || '🚂';
 }
 
-function buildAccessorySVG(cx, cy, rx, ry, unlockedSc) {
-  const accessories = unlockedSc.filter(id => TRAIN_PIECES.find(p => p.id === id)?.isAccessory);
+function buildAccessorySVG(cx, cy, rx, ry, owned) {
+  const accessories = owned.filter(id => {
+    const p = TRAIN_PIECES.find(p => p.id === id);
+    return p?.isAccessory;
+  });
   if (!accessories.length) return '';
 
   // Fixed positions around the outside of the oval (angle in degrees)
@@ -172,7 +127,7 @@ function buildAccessorySVG(cx, cy, rx, ry, unlockedSc) {
     const rad = (slots[i] * Math.PI) / 180;
     const x = Math.round(cx + Math.cos(rad) * rx * r);
     const y = Math.round(cy + Math.sin(rad) * ry * r * 0.85);
-    return `<text data-accessory-id="${id}" x="${x}" y="${y}" font-size="18" text-anchor="middle" dominant-baseline="central">${def.emoji}</text>`;
+    return `<text x="${x}" y="${y}" font-size="18" text-anchor="middle" dominant-baseline="central">${def.emoji}</text>`;
   }).join('\n  ');
 }
 
