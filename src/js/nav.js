@@ -15,9 +15,7 @@ export function initNav() {
 }
 
 export function goTo(name) {
-  if (currentScreen) {
-    screens[currentScreen]?.classList.remove('active');
-  }
+  Object.values(screens).forEach(el => el.classList.remove('active'));
   currentScreen = name;
   screens[name]?.classList.add('active');
   listeners[name]?.forEach(fn => fn());
