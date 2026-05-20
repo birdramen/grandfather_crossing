@@ -362,10 +362,17 @@ export function defaultState() {
 
 export const state = { data: null };
 
+function loadWithTimeout(ms) {
+  return Promise.race([
+    window.gameAPI.loadGame(),
+    new Promise(resolve => setTimeout(() => resolve(null), ms)),
+  ]);
+}
+
 export async function initState() {
   try {
     const saved = window.gameAPI
-      ? await window.gameAPI.loadGame()
+      ? await loadWithTimeout(3000)
       : JSON.parse(localStorage.getItem('philips-garden') ?? 'null');
     if (saved) {
       const fresh = defaultState();
