@@ -137,7 +137,7 @@ export const RECIPES = [
     id: 'blueberry_muffins',
     name: 'Blueberry Muffins',
     emoji: '🧁',
-    desc: 'Rosie's absolute favourite.',
+    desc: "Rosie's absolute favourite.",
     ingredients: { blueberry: 3 },
     result: 'Blueberry Muffins',
     tokens: 8,
