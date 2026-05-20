@@ -661,20 +661,29 @@ html, body {
 .piece-card .piece-cost { font-size: 0.62rem; color: var(--clr-gold); display: block; margin-top: 2px; }
 .piece-card.shop-card.unaffordable { opacity: 0.45; cursor: not-allowed; }
 .piece-card.shop-card.unaffordable:hover { transform: none; }
-.remove-piece-btn {
-  display: block;
-  margin-top: 4px;
-  background: none;
-  border: 1px solid rgba(200,80,80,0.5);
-  border-radius: 4px;
-  color: #e07070;
-  font-size: 0.6rem;
-  padding: 1px 5px;
-  cursor: pointer;
-  line-height: 1.4;
+.collection-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 2px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  cursor: default;
 }
-.remove-piece-btn:hover { background: rgba(200,80,80,0.2); }
-.remove-piece-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.collection-row:last-child { border-bottom: none; }
+.collection-emoji { font-size: 1.1rem; flex-shrink: 0; }
+.collection-name { font-size: 0.78rem; color: var(--clr-cream); flex: 1; }
+.remove-piece-btn {
+  background: none;
+  border: none;
+  color: rgba(200,100,100,0.6);
+  font-size: 0.7rem;
+  padding: 2px 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  border-radius: 3px;
+}
+.remove-piece-btn:hover { color: #e07070; background: rgba(200,80,80,0.15); }
+.remove-piece-btn:disabled { opacity: 0.2; cursor: not-allowed; }
 
 .token-display { color: var(--clr-gold); font-size: 1rem; margin-left: auto; }
 
