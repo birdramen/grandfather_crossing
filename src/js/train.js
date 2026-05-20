@@ -4,6 +4,14 @@ import { onEnter, toast } from './nav.js';
 // Rolling stock order: how carriages line up behind the engine
 const STOCK_ORDER = ['steam_engine', 'coal_tender', 'dining_car', 'passenger_carriage', 'goods_wagon', 'brake_van'];
 
+// Collision detection state
+let collisionTimer = null;
+let trainStartTime = null;
+let trainLoopMs = 0;
+let trainOval = null; // { cx, cy, rx, ry }
+const ACCESSORY_SLOTS = [0, 45, 90, 135, 180, 225, 270, 315];
+const ACCESSORY_R = 1.22;
+
 export function initTrain() {
   onEnter('train', renderTrain);
 }
@@ -93,6 +101,56 @@ function buildSVGTrack() {
 
   // Position the scenery island to cover the oval interior
   positionSceneryIsland(cx, cy, rx, ry, W, H);
+
+  // Start collision detection if there are accessories to hit
+  const hasAccessories = owned.some(id => TRAIN_PIECES.find(p => p.id === id)?.isAccessory);
+  startCollisionCheck(cx, cy, rx, ry, parseFloat(dur), hasAccessories);
+}
+
+// ─── Collision detection ──────────────────────────────────────────────────────
+
+function startCollisionCheck(cx, cy, rx, ry, durSecs, hasAccessories) {
+  clearInterval(collisionTimer);
+  collisionTimer = null;
+  if (!hasAccessories) return;
+  trainStartTime = Date.now();
+  trainLoopMs = durSecs * 1000;
+  trainOval = { cx, cy, rx, ry };
+  collisionTimer = setInterval(checkCollisions, 250);
+}
+
+function checkCollisions() {
+  if (!document.getElementById('screen-train')?.classList.contains('active')) return;
+  if (!trainOval) return;
+
+  const { cx, cy, rx, ry } = trainOval;
+  const frac = ((Date.now() - trainStartTime) % trainLoopMs) / trainLoopMs;
+  // Train travels clockwise from leftmost point; angle = π - 2π*frac
+  const theta = Math.PI - 2 * Math.PI * frac;
+  const trainX = cx + rx * Math.cos(theta);
+  const trainY = cy + ry * Math.sin(theta);
+
+  const accessoryIds = state.data.train.ownedPieces.filter(id =>
+    TRAIN_PIECES.find(p => p.id === id)?.isAccessory
+  );
+
+  let demolished = false;
+  accessoryIds.slice(0, ACCESSORY_SLOTS.length).forEach((id, i) => {
+    const rad = (ACCESSORY_SLOTS[i] * Math.PI) / 180;
+    const ax = cx + Math.cos(rad) * rx * ACCESSORY_R;
+    const ay = cy + Math.sin(rad) * ry * ACCESSORY_R * 0.85;
+    const dist = Math.hypot(trainX - ax, trainY - ay);
+    if (dist < 55) {
+      const def = TRAIN_PIECES.find(p => p.id === id);
+      const idx = state.data.train.ownedPieces.indexOf(id);
+      if (idx !== -1) state.data.train.ownedPieces.splice(idx, 1);
+      save();
+      toast(`💥 The train demolished the ${def?.name ?? id}!`);
+      demolished = true;
+    }
+  });
+
+  if (demolished) renderTrain();
 }
 
 function ellipsePath(cx, cy, rx, ry) {
