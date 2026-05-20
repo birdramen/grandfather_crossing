@@ -6,11 +6,6 @@ const STOCK_ORDER = ['steam_engine', 'coal_tender', 'dining_car', 'passenger_car
 
 // Collision detection state
 let collisionTimer = null;
-let trainStartTime = null;
-let trainLoopMs = 0;
-let trainOval = null; // { cx, cy, rx, ry }
-const ACCESSORY_SLOTS = [0, 45, 90, 135, 180, 225, 270, 315];
-const ACCESSORY_R = 1.22;
 
 export function initTrain() {
   onEnter('train', renderTrain);
@@ -105,46 +100,40 @@ function buildSVGTrack() {
 
   // Start collision detection if there are accessories to hit
   const hasAccessories = unlockedSc.some(id => TRAIN_PIECES.find(p => p.id === id)?.isAccessory);
-  startCollisionCheck(cx, cy, rx, ry, parseFloat(dur), hasAccessories);
+  startCollisionCheck(hasAccessories);
 }
 
 // ─── Collision detection ──────────────────────────────────────────────────────
 
-function startCollisionCheck(cx, cy, rx, ry, durSecs, hasAccessories) {
+function startCollisionCheck(hasAccessories) {
   clearInterval(collisionTimer);
   collisionTimer = null;
   if (!hasAccessories) return;
-  trainStartTime = Date.now();
-  trainLoopMs = durSecs * 1000;
-  trainOval = { cx, cy, rx, ry };
-  collisionTimer = setInterval(checkCollisions, 250);
+  collisionTimer = setInterval(checkCollisions, 300);
 }
 
 function checkCollisions() {
-  if (!document.getElementById('screen-train')?.classList.contains('active')) return;
-  if (!trainOval) return;
+  const scene = document.getElementById('train-scene');
+  if (!scene || !document.getElementById('screen-train')?.classList.contains('active')) return;
 
-  const { cx, cy, rx, ry } = trainOval;
-  const frac = ((Date.now() - trainStartTime) % trainLoopMs) / trainLoopMs;
-  // Train travels clockwise from leftmost point; angle = π - 2π*frac
-  const theta = Math.PI - 2 * Math.PI * frac;
-  const trainX = cx + rx * Math.cos(theta);
-  const trainY = cy + ry * Math.sin(theta);
+  // Read the train's actual rendered position from the DOM
+  const trainEl = scene.querySelector('svg text');
+  if (!trainEl) return;
+  const tr = trainEl.getBoundingClientRect();
+  const trainX = tr.left + tr.width / 2;
+  const trainY = tr.top  + tr.height / 2;
 
-  const unlockedSc = state.data.train.unlockedScenery ?? [];
-  const accessoryIds = unlockedSc.filter(id =>
-    TRAIN_PIECES.find(p => p.id === id)?.isAccessory
-  );
-
+  // Each accessory <text> has data-accessory-id set in buildAccessorySVG
   let demolished = false;
-  accessoryIds.slice(0, ACCESSORY_SLOTS.length).forEach((id, i) => {
-    const rad = (ACCESSORY_SLOTS[i] * Math.PI) / 180;
-    const ax = cx + Math.cos(rad) * rx * ACCESSORY_R;
-    const ay = cy + Math.sin(rad) * ry * ACCESSORY_R * 0.85;
-    const dist = Math.hypot(trainX - ax, trainY - ay);
-    if (dist < 65) {
+  scene.querySelectorAll('[data-accessory-id]').forEach(el => {
+    const id = el.dataset.accessoryId;
+    const ar = el.getBoundingClientRect();
+    const ax = ar.left + ar.width / 2;
+    const ay = ar.top  + ar.height / 2;
+    if (Math.hypot(trainX - ax, trainY - ay) < 48) {
       const def = TRAIN_PIECES.find(p => p.id === id);
-      state.data.train.unlockedScenery = unlockedSc.filter(uid => uid !== id);
+      const sc = state.data.train.unlockedScenery ?? [];
+      state.data.train.unlockedScenery = sc.filter(uid => uid !== id);
       save();
       toast(`💥 The train demolished the ${def?.name ?? id}!`);
       demolished = true;
@@ -183,7 +172,7 @@ function buildAccessorySVG(cx, cy, rx, ry, unlockedSc) {
     const rad = (slots[i] * Math.PI) / 180;
     const x = Math.round(cx + Math.cos(rad) * rx * r);
     const y = Math.round(cy + Math.sin(rad) * ry * r * 0.85);
-    return `<text x="${x}" y="${y}" font-size="18" text-anchor="middle" dominant-baseline="central">${def.emoji}</text>`;
+    return `<text data-accessory-id="${id}" x="${x}" y="${y}" font-size="18" text-anchor="middle" dominant-baseline="central">${def.emoji}</text>`;
   }).join('\n  ');
 }
 
