@@ -585,13 +585,12 @@ html, body {
 .scenery-island {
   position: absolute;
   border-radius: 50%;
-  /* gentle outline so Philip can see where to drop things */
-  border: 2px dashed rgba(160,220,100,0.25);
+  border: 2px dashed transparent;
   pointer-events: all;
   overflow: hidden;
 }
 .scenery-island:hover {
-  border-color: rgba(160,220,100,0.45);
+  border-color: rgba(160,220,100,0.3);
 }
 
 /* Draggable scenery pieces inside the island */
