@@ -131,15 +131,25 @@ function buildAccessorySVG(cx, cy, rx, ry, owned) {
   }).join('\n  ');
 }
 
-// Position the scenery island div to cover the oval interior
+// Position the scenery island div to cover the oval interior.
+// The SVG uses preserveAspectRatio="xMidYMid meet" so we must account
+// for the actual rendered scale and centering offset.
 function positionSceneryIsland(cx, cy, rx, ry, W, H) {
   const island = document.getElementById('scenery-island');
-  if (!island) return;
-  const pad = 18; // inset from rail
-  island.style.left   = `${((cx - rx + pad) / W * 100).toFixed(1)}%`;
-  island.style.top    = `${((cy - ry + pad) / H * 100).toFixed(1)}%`;
-  island.style.width  = `${((rx - pad) * 2 / W * 100).toFixed(1)}%`;
-  island.style.height = `${((ry - pad) * 2 / H * 100).toFixed(1)}%`;
+  const scene  = document.getElementById('train-scene');
+  if (!island || !scene) return;
+
+  const sceneW = scene.clientWidth;
+  const sceneH = scene.clientHeight;
+  const scale  = Math.min(sceneW / W, sceneH / H);
+  const offX   = (sceneW - W * scale) / 2;
+  const offY   = (sceneH - H * scale) / 2;
+
+  const pad = 18;
+  island.style.left   = `${offX + (cx - rx + pad) * scale}px`;
+  island.style.top    = `${offY + (cy - ry + pad) * scale}px`;
+  island.style.width  = `${(rx - pad) * 2 * scale}px`;
+  island.style.height = `${(ry - pad) * 2 * scale}px`;
 }
 
 // ─── Train preview (sidebar) ──────────────────────────────────────────────────
